@@ -1,101 +1,47 @@
-# Personal Finance Management Application
+# Proyecto Base Implementando Clean Architecture
 
-## Overview
+## Antes de Iniciar
 
-This project is a Personal Finance Management application developed using Java - Spring Boot. The application is designed with a clean architecture, oriented towards microservices, and leverages functional and reactive programming paradigms.
+Empezaremos por explicar los diferentes componentes del proyectos y partiremos de los componentes externos, continuando con los componentes core de negocio (dominio) y por último el inicio y configuración de la aplicación.
 
-## Features
+Lee el artículo [Clean Architecture — Aislando los detalles](https://medium.com/bancolombia-tech/clean-architecture-aislando-los-detalles-4f9530f35d7a)
 
-- **Income and Expense Management**: Manually record and categorize transactions, with automatic classification of transactions.
-- **Budgets and Savings**: Create and track custom budgets, set savings goals, and monitor progress.
-- **Reports and Analysis**: Generate monthly and annual financial reports, and visualize income vs. expenses with charts.
-- **Bank Integration**: Synchronize with bank accounts to automatically import transactions and receive notifications for suspicious activities or budget limits.
-- **Reminders and Alerts**: Set reminders for bill payments and receive alerts when budget limits are reached.
-- **Financial Planning**: Simulate financial scenarios and receive financial advice based on data analysis.
+# Arquitectura
 
-## Architecture
+![Clean Architecture](https://miro.medium.com/max/1400/1*ZdlHz8B0-qu9Y-QO3AXR_w.png)
 
-The application is built using a microservices architecture, with each service responsible for a specific domain. The services communicate via RESTful APIs and are designed to be independently deployable and scalable.
+## Domain
 
-### Microservices
+Es el módulo más interno de la arquitectura, pertenece a la capa del dominio y encapsula la lógica y reglas del negocio mediante modelos y entidades del dominio.
 
-1. **User Service**: Manages user authentication, authorization, and profile management.
-2. **Transaction Service**: Handles the recording and management of financial transactions.
-3. **Budget Service**: Manages the creation and tracking of budgets.
-4. **Report Service**: Generates financial reports and visualizations.
-5. **Bank Integration Service**: Synchronizes with bank accounts and other financial services.
+## Usecases
 
-### Technologies Used
+Este módulo gradle perteneciente a la capa del dominio, implementa los casos de uso del sistema, define lógica de aplicación y reacciona a las invocaciones desde el módulo de entry points, orquestando los flujos hacia el módulo de entities.
 
-- **Java - Spring Boot**: Core framework for building and configuring the application.
-- **Spring WebFlux**: For building reactive, non-blocking applications.
-- **Spring Data**: For data access with support for SQL (PostgreSQL) and NoSQL (MongoDB) databases.
-- **Spring Security**: For implementing authentication and authorization.
-- **Kafka or RabbitMQ**: For asynchronous communication between microservices.
-- **Docker and Kubernetes**: For containerization and orchestration, enabling easy deployment and scalability.
-- **GraphQL**: For efficient and flexible data querying.
-- **OAuth2**: For secure integration with banking and third-party services.
+## Infrastructure
 
-## Getting Started
+### Helpers
 
-### Prerequisites
+En el apartado de helpers tendremos utilidades generales para los Driven Adapters y Entry Points.
 
-- JDK 11 or later
-- Docker
-- Docker Compose (for local development)
-- PostgreSQL (or other preferred database)
-- Kafka or RabbitMQ (for message brokering)
+Estas utilidades no están arraigadas a objetos concretos, se realiza el uso de generics para modelar comportamientos
+genéricos de los diferentes objetos de persistencia que puedan existir, este tipo de implementaciones se realizan
+basadas en el patrón de diseño [Unit of Work y Repository](https://medium.com/@krzychukosobudzki/repository-design-pattern-bc490b256006)
 
-### Setting Up the Development Environment
+Estas clases no puede existir solas y debe heredarse su compartimiento en los **Driven Adapters**
 
-1. **Clone the Repository**
-    ```bash
-    git clone https://github.com/yourusername/finance-management-app.git
-    cd finance-management-app
-    ```
+### Driven Adapters
 
-2. **Build the Application**
-    ```bash
-    ./mvnw clean install
-    ```
+Los driven adapter representan implementaciones externas a nuestro sistema, como lo son conexiones a servicios rest,
+soap, bases de datos, lectura de archivos planos, y en concreto cualquier origen y fuente de datos con la que debamos
+interactuar.
 
-3. **Run the Application with Docker Compose**
-    ```bash
-    docker-compose up
-    ```
+### Entry Points
 
-### Running Individual Microservices
+Los entry points representan los puntos de entrada de la aplicación o el inicio de los flujos de negocio.
 
-Each microservice can be run individually for development and testing purposes. Navigate to the respective microservice directory and use the following commands:
+## Application
 
-1. **User Service**
-    ```bash
-    cd user-service
-    ./mvnw spring-boot:run
-    ```
+Este módulo es el más externo de la arquitectura, es el encargado de ensamblar los distintos módulos, resolver las dependencias y crear los beans de los casos de use (UseCases) de forma automática, inyectando en éstos instancias concretas de las dependencias declaradas. Además inicia la aplicación (es el único módulo del proyecto donde encontraremos la función “public static void main(String[] args)”.
 
-2. **Transaction Service**
-    ```bash
-    cd transaction-service
-    ./mvnw spring-boot:run
-    ```
-
-3. **Budget Service**
-    ```bash
-    cd budget-service
-    ./mvnw spring-boot:run
-    ```
-
-4. **Report Service**
-    ```bash
-    cd report-service
-    ./mvnw spring-boot:run
-    ```
-
-5. **Bank Integration Service**
-    ```bash
-    cd bank-integration-service
-    ./mvnw spring-boot:run
-    ```
-
-
+**Los beans de los casos de uso se disponibilizan automaticamente gracias a un '@ComponentScan' ubicado en esta capa.**
